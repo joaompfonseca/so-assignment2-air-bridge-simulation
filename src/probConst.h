@@ -22,13 +22,13 @@
 /** \brief max flight capacity */
 #define  MAXFC    10
 
-/** \brief max flight capacity */
+/** \brief max number of flights */
 #define  MAXNF    10
 
-/** \brief max flight capacity */
+/** \brief max passenger travel duration */
 #define  MAXTRAVEL   30000.0 
 
-/** \brief max flight capacity */
+/** \brief max flight duration */
 #define  MAXFLIGHT   2000.0 
 
 /* Pilot state constants */
