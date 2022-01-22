@@ -44,7 +44,7 @@ static SHARED_DATA *sh;
 static bool travelToAirport ();
 static void waitInQueue (unsigned int passengerId);
 static void waitUntilDestination (unsigned int passengerId);
-static void leavePlane (unsigned int passengerId);
+// static void leavePlane (unsigned int passengerId);
 
 /**
  *  \brief Main program.
@@ -146,6 +146,9 @@ static void waitInQueue (unsigned int passengerId)
     }
 
     /* insert your code here */
+    sh->fSt.st.passengerStat[passengerId] = IN_QUEUE; // Alterar estado do passageiro
+    sh->fSt.nPassInQueue++;                           // Incrementar nr de passageiros na fila
+    saveState(nFic, &(sh->fSt));                      // Guardar estados
 
     if (semUp (semgid, sh->mutex) == -1)                                                      /* exit critical region */
     { perror ("error on the up operation for semaphore access (PG)");
@@ -153,7 +156,8 @@ static void waitInQueue (unsigned int passengerId)
     }
 
     /* insert your code here */
-
+    semUp(semgid, sh->passengersInQueue);       // Avisar hospedeira que passageiro está à espera na fila
+    semDown(semgid, sh->passengersWaitInQueue); // Esperar autorização da hospedeira para mostrar ID
 
     if (semDown (semgid, sh->mutex) == -1) {                                                  /* enter critical region */
         perror ("error on the down operation for semaphore access (PG)");
@@ -161,6 +165,9 @@ static void waitInQueue (unsigned int passengerId)
     }
 
     /* insert your code here */
+    sh->fSt.st.passengerStat[passengerId] = IN_FLIGHT; // Alterar estado do passageiro 
+    sh->fSt.passengerChecked = passengerId;            // Guardar ID do passageiro
+    saveState(nFic, &(sh->fSt));                       // Guardar estados
 
     if (semUp (semgid, sh->mutex) == -1) {                                                  /* enter critical region */
         perror ("error on the down operation for semaphore access (PG)");
@@ -168,6 +175,7 @@ static void waitInQueue (unsigned int passengerId)
     }
 
     /* insert your code here */
+    semUp(semgid, sh->idShown); // Autorizar a hospedeira a ler o ID
 }
 
 /**
@@ -185,6 +193,7 @@ static void waitUntilDestination (unsigned int passengerId)
 {
 
     /* insert your code here */
+    semDown(semgid, sh->passengersWaitInFlight); // Esperar pelo fim do voo
 
     if (semDown (semgid, sh->mutex) == -1) {                                                  /* enter critical region */
         perror ("error on the down operation for semaphore access (PG)");
@@ -192,6 +201,12 @@ static void waitUntilDestination (unsigned int passengerId)
     }
 
     /* insert your code here */
+    sh->fSt.st.passengerStat[passengerId] = AT_DESTINATION; // Alterar estado do passageiro
+    sh->fSt.nPassInFlight--;                                // Decrementar nr de passageiros no voo
+    saveState(nFic, &(sh->fSt));                            // Guardar estados
+
+    if (sh->fSt.nPassInFlight == 0)
+        semUp (semgid, sh->planeEmpty); // Informar piloto que o avião está vazio
 
     if (semUp (semgid, sh->mutex) == -1) {                                                  /* enter critical region */
         perror ("error on the down operation for semaphore access (PG)");

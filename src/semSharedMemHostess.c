@@ -147,6 +147,8 @@ static void waitForNextFlight ()
     }
 
     /* insert your code here */
+    sh->fSt.st.hostessStat = WAIT_FOR_FLIGHT; // Alterar estado da hospedeira
+    saveState(nFic, &(sh->fSt));              // Guardar estados
     
     if (semUp (semgid, sh->mutex) == -1)                                                   /* exit critical region */
     { perror ("error on the down operation for semaphore access (HT)");
@@ -154,6 +156,7 @@ static void waitForNextFlight ()
     }
 
     /* insert your code here */
+    semDown(semgid, sh->readyForBoarding); // Espera autorização do piloto para começar o embarque
 }
 
 /**
@@ -171,6 +174,8 @@ static void waitForPassenger ()
     }
 
     /* insert your code here */
+    sh->fSt.st.hostessStat = WAIT_FOR_PASSENGER; // Alterar estado da hospedeira
+    saveState(nFic, &(sh->fSt));                 // Guardar estados
 
     if (semUp (semgid, sh->mutex) == -1) {                                                  /* exit critical region */
      perror ("error on the down operation for semaphore access (HT)");
@@ -178,6 +183,7 @@ static void waitForPassenger ()
     }
 
     /* insert your code here */
+    semDown(semgid, sh->passengersInQueue); // Esperar pelo próximo passageiro
 }
 
 /**
@@ -202,10 +208,11 @@ static bool checkPassport()
     if (semDown (semgid, sh->mutex) == -1) {                                                     /* enter critical region */
         perror ("error on the up operation for semaphore access (HT)");
         exit (EXIT_FAILURE);
-
     }
 
     /* insert your code here */
+    sh->fSt.st.hostessStat = CHECK_PASSPORT; // Alterar estado da hospedeira
+    saveState(nFic, &(sh->fSt));             // Guardar estados
 
     if (semUp (semgid, sh->mutex) == -1)     {                                                 /* exit critical region */
         perror ("error on the up operation for semaphore access (HT)");
@@ -213,14 +220,25 @@ static bool checkPassport()
     }
 
     /* insert your code here */
+    semUp(semgid, sh->passengersWaitInQueue); // Autorizar passageiro a mostrar o seu ID
+    semDown(semgid, sh->idShown);             // Esperar que o passageiro mostre o ID
 
     if (semDown (semgid, sh->mutex) == -1)  {                                                 /* enter critical region */
         perror ("error on the up operation for semaphore access (HT)");
         exit (EXIT_FAILURE);
-
     }
 
     /* insert your code here */
+    sh->fSt.nPassInQueue--;     // Decrementar nr de passageiros na fila
+    sh->fSt.nPassInFlight++;    // Incrementar nr de passageiros no voo
+    sh->fSt.totalPassBoarded++; // Incrementar nr de passageiros totais que já embarcaram
+
+    last = nPassengersInFlight() == MAXFC 
+        || (nPassengersInFlight() >= MINFC && nPassengersInQueue() == 0)
+        || sh->fSt.totalPassBoarded == N; // Determinar se é o último voo
+
+    savePassengerChecked(nFic, &(sh->fSt)); // Identificar o passageiro que embarcou
+    saveState(nFic, &(sh->fSt));            // Guardar estados
 
     if (semUp (semgid, sh->mutex) == -1) {                                                     /* exit critical region */
         perror ("error on the up operation for semaphore access (HT)");
@@ -259,6 +277,11 @@ void  signalReadyToFlight()
     }
 
     /* insert your code here */
+    sh->fSt.st.hostessStat = READY_TO_FLIGHT;                               // Alterar estado da hospedeira
+    sh->fSt.nPassengersInFlight[sh->fSt.nFlight-1] = sh->fSt.nPassInFlight; // Guardar nr de passageiros no voo
+    sh->fSt.finished = sh->fSt.totalPassBoarded == N;                       // Determinar se todos os passageiros já embarcaram
+    saveFlightDeparted(nFic, &(sh->fSt));                                   // Indicar o começo do voo
+    saveState(nFic, &(sh->fSt));                                            // Guardar estados
 
     if (semUp (semgid, sh->mutex) == -1) {                                                     /* exit critical region */
         perror ("error on the up operation for semaphore access (HT)");
@@ -266,6 +289,7 @@ void  signalReadyToFlight()
     }
 
     /* insert your code here */
+    semUp(semgid, sh->readyToFlight); // Autorizar piloto a descolar
 }
 
 
