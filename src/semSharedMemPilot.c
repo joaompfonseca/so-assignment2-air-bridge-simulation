@@ -142,6 +142,8 @@ static void flight (bool go)
     }
 
     /* insert your code here */
+    sh->fSt.st.pilotStat = (go) ? FLYING : FLYING_BACK; // Alterar estado do piloto
+    saveState(nFic, &(sh->fSt));                        // Guardar estados
 
     if (semUp (semgid, sh->mutex) == -1) {                                                      /* exit critical region */
         perror ("error on the up operation for semaphore access (PT)");
@@ -167,6 +169,10 @@ static void signalReadyForBoarding ()
     }
 
     /* insert your code here */
+    sh->fSt.st.pilotStat = READY_FOR_BOARDING; // Alterar estado do piloto
+    sh->fSt.nFlight++;                         // Incrementar nr do voo
+    saveState(nFic, &(sh->fSt));               // Guardar estados
+    saveStartBoarding(nFic, &(sh->fSt));       // Indicar o começo do embarque
 
     if (semUp (semgid, sh->mutex) == -1) {                                                      /* exit critical region */
         perror ("error on the up operation for semaphore access (PT)");
@@ -174,7 +180,7 @@ static void signalReadyForBoarding ()
     }
 
     /* insert your code here */
-
+    semUp(semgid, sh->readyForBoarding); // Autorizar hospedeira para começar o embarque
 }
 
 /**
@@ -192,6 +198,8 @@ static void waitUntilReadyToFlight ()
     }
 
     /* insert your code here */
+    sh->fSt.st.pilotStat = WAITING_FOR_BOARDING; // Alterar estado do piloto
+    saveState(nFic, &(sh->fSt));                 // Guardar estados
 
     if (semUp (semgid, sh->mutex) == -1) {                                                      /* exit critical region */
         perror ("error on the up operation for semaphore access (PT)");
@@ -199,6 +207,7 @@ static void waitUntilReadyToFlight ()
     }
 
     /* insert your code here */
+    semDown(semgid, sh->readyToFlight); // Esperar pela hospedeira terminar o embarque
 }
 
 /**
@@ -217,6 +226,13 @@ static void dropPassengersAtTarget ()
     }
 
     /* insert your code here */
+    sh->fSt.st.pilotStat = DROPING_PASSENGERS; // Alterar estado do piloto
+
+    for (int i = 0; i < sh->fSt.nPassInFlight; i++)
+        semUp(semgid, sh->passengersWaitInFlight); // Autorizar passageiros a sair do avião
+
+    saveFlightArrived(nFic, &(sh->fSt)); // Indicar chegada do voo
+    saveState(nFic, &(sh->fSt));         // Guardar estados
 
     if (semUp (semgid, sh->mutex) == -1)  {                                                   /* exit critical region */
         perror ("error on the up operation for semaphore access (PT)");
@@ -224,6 +240,7 @@ static void dropPassengersAtTarget ()
     }
 
     /* insert your code here */
+    semDown(semgid, sh->planeEmpty); // Esperar que o avião fique vazio
 
     if (semDown (semgid, sh->mutex) == -1) {                                                  /* enter critical region */
         perror ("error on the down operation for semaphore access (PT)");
@@ -231,6 +248,7 @@ static void dropPassengersAtTarget ()
     }
 
     /* insert your code here */
+    saveFlightReturning(nFic, &(sh->fSt)); // Indicar o regresso do voo
 
     if (semUp (semgid, sh->mutex) == -1)  {                                                   /* exit critical region */
         perror ("error on the up operation for semaphore access (PT)");
