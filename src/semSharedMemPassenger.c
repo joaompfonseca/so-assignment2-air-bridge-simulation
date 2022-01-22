@@ -206,7 +206,7 @@ static void waitUntilDestination (unsigned int passengerId)
     saveState(nFic, &(sh->fSt));                            // Guardar estados
 
     if (sh->fSt.nPassInFlight == 0)
-        semUp (semgid, sh->planeEmpty); // Informar piloto que o avião está vazio
+        semUp(semgid, sh->planeEmpty); // Informar piloto que o avião está vazio
 
     if (semUp (semgid, sh->mutex) == -1) {                                                  /* enter critical region */
         perror ("error on the down operation for semaphore access (PG)");

@@ -156,7 +156,7 @@ static void waitForNextFlight ()
     }
 
     /* insert your code here */
-    semDown(semgid, sh->readyForBoarding); // Espera autorização do piloto para começar o embarque
+    semDown(semgid, sh->readyForBoarding); // Esperar autorização do piloto para começar o embarque
 }
 
 /**
@@ -280,8 +280,8 @@ void  signalReadyToFlight()
     sh->fSt.st.hostessStat = READY_TO_FLIGHT;                               // Alterar estado da hospedeira
     sh->fSt.nPassengersInFlight[sh->fSt.nFlight-1] = sh->fSt.nPassInFlight; // Guardar nr de passageiros no voo
     sh->fSt.finished = sh->fSt.totalPassBoarded == N;                       // Determinar se todos os passageiros já embarcaram
-    saveFlightDeparted(nFic, &(sh->fSt));                                   // Indicar o começo do voo
     saveState(nFic, &(sh->fSt));                                            // Guardar estados
+    saveFlightDeparted(nFic, &(sh->fSt));                                   // Indicar o começo do voo
 
     if (semUp (semgid, sh->mutex) == -1) {                                                     /* exit critical region */
         perror ("error on the up operation for semaphore access (HT)");
