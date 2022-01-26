@@ -137,7 +137,7 @@ static bool isFinished ()
 static void flight (bool go)
 {
     if (semDown (semgid, sh->mutex) == -1) {                                                      /* enter critical region */
-        perror ("error on the up operation for semaphore access (PT)");
+        perror ("error on the down operation for semaphore access (PT)");
         exit (EXIT_FAILURE);
     }
 
@@ -164,7 +164,7 @@ static void flight (bool go)
 static void signalReadyForBoarding ()
 {
     if (semDown (semgid, sh->mutex) == -1) {                                                      /* enter critical region */
-        perror ("error on the up operation for semaphore access (PT)");
+        perror ("error on the down operation for semaphore access (PT)");
         exit (EXIT_FAILURE);
     }
 
@@ -193,7 +193,7 @@ static void signalReadyForBoarding ()
 static void waitUntilReadyToFlight ()
 {
     if (semDown (semgid, sh->mutex) == -1) {                                                      /* enter critical region */
-        perror ("error on the up operation for semaphore access (PT)");
+        perror ("error on the down operation for semaphore access (PT)");
         exit (EXIT_FAILURE);
     }
 
